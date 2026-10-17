@@ -1,0 +1,4583 @@
+<!--
+  ==========================================================================
+  拾光论坛 · 用户主页模板
+  ==========================================================================
+  这是什么：玩家点开【别的用户】看到的主页。
+
+  ★ 静态 + 两处互动
+      · 静态：没有关注按钮，关注/粉丝/获赞点不动
+      · 导航栏只有 3 样：logo、首页/论坛首页、搜索框
+        （个人头像、通知铃铛、橙色小点都已去掉 —— 那些属于玩家自己的账号）
+      · 互动1：留言墙 —— 玩家可以留言
+      · 互动2：动态 —— 玩家可以发表动态、给动态点赞
+
+  --------------------------------------------------------------------------
+  怎么用
+  --------------------------------------------------------------------------
+  1. 复制本文件，改名成 user-xxx.html（英文名，例如 user-lulu.html）
+  2. 搜 ★ 改内容（一共 7 处）：
+       ★【1】头像      文字「林」或换成图片
+       ★【2】昵称
+       ★【3】个性签名
+       ★【4】三个数字  关注 / 粉丝 / 获赞
+       ★【5】签名档
+       ★【6】留言墙    已有的留言
+       ★【7】帖子列表  和  动态
+  3. 上传：和 index.html、images\ 一起传
+
+  --------------------------------------------------------------------------
+  头像用图片
+  --------------------------------------------------------------------------
+  <div class="profile-avatar">
+    林<img class="avatar-img" src="images/touxiang/01.jpg" alt="">
+  </div>
+  容器里那个字留着当兜底：图片路径错了会显示字，不会一片空白。
+  （留言墙、动态里的小头像同理，容器 class 是 avatar）
+
+  --------------------------------------------------------------------------
+  这个用户还没发过帖子怎么办？
+  --------------------------------------------------------------------------
+  搜 ★【7】找到帖子列表，那里写了两种情况：
+    · 有帖子：保持不动，把条目换成这个用户的帖子
+    · 没帖子：删掉【情况一】那块，再把【情况二】那块的注释放开（去掉 ＜！－－ 和 －－＞）
+              页面就只显示「该用户还没有发布过帖子」，不会出现空白方框
+
+  --------------------------------------------------------------------------
+  让帖子列表能点开
+  --------------------------------------------------------------------------
+  现在每条是 onclick="openPost()"，点了只弹提示。
+  想真打开某篇帖子，改成：
+     onclick="location.href='post-c1.html'"
+
+  --------------------------------------------------------------------------
+  一个用户一份文件
+  --------------------------------------------------------------------------
+  每个要展示的用户存成一个 html 文件最省事（user-lulu.html、user-ayu.html…），
+  主站里把名字接过来即可：<a href="user-lulu.html">露露</a>
+  （user-lulu.html 只是举例，改成你实际的文件名）
+  ==========================================================================
+-->
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ★ 浏览器标签上的名字 -->
+    <title>浅浅的秋 的主页 · 拾光论坛</title>
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="images/icon/favicon-32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="images/icon/favicon-48.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="images/icon/favicon-180.png"
+    />
+    <style>
+      /* ===== 全局重置 ===== */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+          "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f7f8fa;
+        color: #1f2329;
+        line-height: 1.6;
+        min-height: 100vh;
+        padding-top: 64px;
+      }
+
+      /* ===== 设计变量 ===== */
+      :root {
+        --bg-page: #f7f8fa;
+        --bg-card: #ffffff;
+        --text-primary: #1f2329;
+        --text-secondary: #646a73;
+        --text-tertiary: #8f959e;
+        --brand: #1a5fb4;
+        --brand-light: #e8f0fe;
+        --brand-hover: #154a8c;
+        --border: #e5e6eb;
+        --border-light: #f0f1f3;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --max-width: 1240px;
+        --nav-height: 64px;
+        --shadow-sm:
+          0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.07);
+        --accent: #e8590c;
+        --accent-light: #fff0e8;
+        --success: #2da44e;
+        --success-light: #e6f7ea;
+      }
+
+      /* ===== 通用容器 ===== */
+      .container {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ===== 顶部导航栏 ===== */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--nav-height);
+        background: #ffffff;
+        border-bottom: 1px solid var(--border);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+      }
+
+      .navbar .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+
+      .logo {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--brand);
+        letter-spacing: -0.01em;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .logo-icon {
+        width: 30px;
+        height: 30px;
+        background: var(--brand);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 4px;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: var(--radius-sm);
+        transition: all 0.15s;
+      }
+
+      .nav-links a:hover {
+        background: var(--brand-light);
+        color: var(--brand);
+      }
+
+      .nav-links a.active {
+        background: var(--brand-light);
+        color: var(--brand);
+        font-weight: 600;
+      }
+
+      /* 搜索框 */
+
+      .nav-search {
+        flex: 1;
+        max-width: 380px;
+        margin: 0 24px;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      /* 放大镜：用 CSS 画（圆 + 斜线），不依赖字体，所以能精准居中 */
+      .nav-search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 13px;
+        height: 13px;
+        border: 1.5px solid var(--text-tertiary);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .nav-search-icon::after {
+        content: "";
+        position: absolute;
+        right: -4px;
+        bottom: -3px;
+        width: 6px;
+        height: 1.5px;
+        background: var(--text-tertiary);
+        border-radius: 1px;
+        transform: rotate(45deg);
+        transform-origin: left center;
+      }
+
+      .nav-search input {
+        width: 100%;
+        height: 38px;
+        padding: 0 16px 0 40px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--bg-page);
+        font-size: 0.85rem;
+        font-family: inherit;
+        line-height: 1;
+        color: var(--text-primary);
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .nav-search input:focus {
+        border-color: var(--brand);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.1);
+      }
+
+      .nav-search input::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      /* ===== 页面通用 ===== */
+      .page {
+        display: none;
+        padding: 28px 0 64px;
+      }
+
+      .page.active {
+        display: block;
+      }
+
+      /* ===== 首页布局 ===== */
+      .home-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 24px;
+        align-items: start;
+      }
+
+      /* 社区快讯横向栏 */
+      .news-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+      }
+
+      .news-bar-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--brand);
+        background: var(--brand-light);
+        padding: 2px 10px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .news-bar-content {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .news-bar-content span {
+        margin-right: 24px;
+      }
+
+      .news-bar-content a {
+        color: var(--brand);
+        text-decoration: none;
+      }
+
+      /* 首页导航标签 */
+      .feed-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        padding: 4px;
+      }
+
+      .feed-tabs button {
+        flex: 1;
+        padding: 8px 0;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .feed-tabs button:hover {
+        background: var(--bg-page);
+      }
+
+      .feed-tabs button.active {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      /* 帖子列表 */
+      .post-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .post-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 18px 22px;
+        display: flex;
+        gap: 16px;
+        transition: all 0.15s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .post-item:hover {
+        border-color: #c9d3e0;
+        box-shadow: var(--shadow-md);
+      }
+
+      .post-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: var(--brand);
+        flex-shrink: 0;
+        font-weight: 600;
+      }
+
+      .post-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .post-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        margin-bottom: 6px;
+      }
+
+      .post-author {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .post-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        line-height: 1.4;
+      }
+
+      .post-excerpt {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .post-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .tag {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: var(--bg-page);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+
+      .tag.hot {
+        background: var(--accent-light);
+        color: var(--accent);
+        border-color: #ffd9c0;
+      }
+
+      .tag.good {
+        background: var(--success-light);
+        color: var(--success);
+        border-color: #c8e6d0;
+      }
+
+      .post-stats {
+        display: flex;
+        gap: 18px;
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+      }
+
+      .post-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* 右侧推荐区 */
+      .sidebar-right {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .sidebar-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .sidebar-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sidebar-title i {
+        color: var(--brand);
+        font-size: 0.9rem;
+      }
+
+      .hot-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .hot-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: color 0.12s;
+      }
+
+      .hot-list li:last-child {
+        border-bottom: none;
+      }
+
+      .hot-list li:hover {
+        color: var(--brand);
+      }
+
+      .hot-rank {
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .hot-rank.top3 {
+        color: var(--accent);
+      }
+
+      .active-users {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .active-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .active-user .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        color: var(--brand);
+        font-weight: 600;
+      }
+
+      .active-user .info {
+        flex: 1;
+      }
+
+      .active-user .name {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .active-user .action {
+        font-size: 0.72rem;
+        color: var(--text-tertiary);
+      }
+
+      /* ===== 个人主页 ===== */
+      .profile-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+
+      .profile-sidebar {
+        position: sticky;
+        top: 88px;
+      }
+
+      .profile-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 28px 24px;
+        box-shadow: var(--shadow-sm);
+        text-align: center;
+      }
+
+      .profile-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem;
+        color: var(--brand);
+        margin: 0 auto 16px;
+        font-weight: 600;
+      }
+
+      .profile-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .profile-desc {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 18px;
+      }
+
+      .profile-stats {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        margin-bottom: 18px;
+        padding: 16px 0;
+        border-top: 1px solid var(--border-light);
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .profile-stat {
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .profile-stat:hover .num {
+        color: var(--brand);
+      }
+
+      .profile-stat .num {
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: var(--text-primary);
+        transition: color 0.12s;
+      }
+
+      .profile-stat .label {
+        font-size: 0.72rem;
+        color: var(--text-tertiary);
+      }
+
+      .profile-motto {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-style: italic;
+        margin-bottom: 18px;
+        line-height: 1.5;
+      }
+
+      /* 留言墙 */
+      .guestbook {
+        margin-top: 22px;
+        text-align: left;
+      }
+
+      .guestbook-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+      }
+
+      .guestbook-input {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .guestbook-input input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-size: 0.82rem;
+        outline: none;
+        background: var(--bg-page);
+      }
+
+      .guestbook-input input:focus {
+        border-color: var(--brand);
+        background: #fff;
+      }
+
+      .guestbook-input button {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: none;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .guestbook-input button:hover {
+        background: var(--brand-hover);
+      }
+
+      .guestbook-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .guestbook-item {
+        display: flex;
+        gap: 10px;
+        font-size: 0.82rem;
+      }
+
+      .guestbook-item .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        color: var(--brand);
+        flex-shrink: 0;
+        font-weight: 600;
+      }
+
+      .guestbook-item .content {
+        flex: 1;
+      }
+
+      .guestbook-item .name {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .guestbook-item .text {
+        color: var(--text-secondary);
+        margin-top: 2px;
+        line-height: 1.4;
+      }
+
+      .guestbook-item .time {
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+        margin-top: 4px;
+      }
+
+      /* 右侧内容 */
+      .profile-content {
+        min-width: 0;
+      }
+
+      .profile-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .profile-tabs button {
+        flex: 1;
+        padding: 12px 0;
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+        border-bottom: 2px solid transparent;
+      }
+
+      .profile-tabs button:hover {
+        background: var(--bg-page);
+      }
+
+      .profile-tabs button.active {
+        color: var(--brand);
+        border-bottom-color: var(--brand);
+        font-weight: 600;
+      }
+
+      .profile-post-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .profile-post-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 18px 22px;
+        transition: all 0.15s;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .profile-post-item:hover {
+        border-color: #c9d3e0;
+        box-shadow: var(--shadow-md);
+      }
+
+      .profile-post-item .title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .profile-post-item .meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+      }
+
+      /* ======================================================================
+         ★ 头像用图片（和帖子页一致）
+         容器里那个字是兜底：图片路径错了会自动显示它，不会一片空白
+         ====================================================================== */
+      .profile-avatar,
+      .activity-head .avatar,
+      .reply-item .avatar {
+        position: relative;
+        overflow: hidden;
+      }
+
+      img.avatar-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        z-index: 1;
+      }
+
+      /* ======================================================================
+         ★ 点赞图标（图片版）
+         未点赞：images/icon/like.png     点过赞：images/icon/like-on.png
+         ====================================================================== */
+      .like-icon {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 4px;
+        vertical-align: -3px;
+        background-image: url("images/icon/like.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+      }
+
+      .activity-like.liked .like-icon {
+        background-image: url("images/icon/like-on.png");
+      }
+
+      /* 高分屏用 128px 的原图，更清晰 */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+        .like-icon {
+          background-image: url("images/icon/like@128.png");
+        }
+        .activity-like.liked .like-icon {
+          background-image: url("images/icon/like-on@128.png");
+        }
+      }
+
+      /* ======================================================================
+         ★ 动态（这个用户自己发的动态）
+         ----------------------------------------------------------------------
+         结构：
+           .activity-list
+             └ .activity-item        一条动态
+                 ├ .activity-text    文字
+                 ├ .activity-figure  配图（单图，可没有）
+                 │   └ img.activity-img
+                 ├ .activity-gallery 配图（多图，可没有）
+                 │   └ .activity-figure × N
+                 ├ .activity-actions 点赞 / 回复（回复可点开）
+                 └ .activity-replies 回复区（默认收起）
+                     └ .reply-item   一条回复
+         ====================================================================== */
+      .activity-box {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+
+      .activity-list {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .activity-item {
+        padding: 16px 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .activity-item:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      /* 动态头部：头像 + 名字 + 时间 */
+      .activity-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .activity-head .avatar {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .activity-who {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .activity-who .name {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.3;
+      }
+
+      .activity-who .time {
+        font-size: 0.76rem;
+        color: var(--text-tertiary);
+        margin-top: 3px;
+      }
+
+      .activity-text {
+        font-size: 0.92rem;
+        line-height: 1.75;
+        color: var(--text-primary);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* 单图配图 */
+      .activity-figure {
+        margin: 10px 0 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: var(--bg-page);
+        line-height: 0;
+      }
+
+      /* 单张配图：完整显示 + 靠左（不裁切、也不铺满）
+         外面套一个 4:3 的框，框用页面灰当留白底色，图片靠左完整显示 */
+      .activity-figure {
+        aspect-ratio: 4 / 3;
+        background: var(--bg-page);
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;   /* 靠左，不居中 */
+        padding: 10px;
+      }
+
+      .activity-figure img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 6px;
+        cursor: zoom-in;
+      }
+
+      /* 多图：默认竖排（和帖子页一致），想横排给外层加 style="grid-template-columns:repeat(3,1fr)" */
+      /* ======================================================================
+         ★ 配图：朋友圈式三列方格 + 点开看大图
+         ----------------------------------------------------------------------
+         · 三列，超过 3 张自动换行
+         · 每格正方形，图片居中裁切
+         · 点任意一张 → 打开大图（灯箱）
+         · 想改成两列：把 repeat(3, 1fr) 改成 repeat(2, 1fr)
+         ====================================================================== */
+      .activity-gallery {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .activity-gallery .activity-figure {
+        margin: 0;
+        aspect-ratio: 1 / 1;
+        border-radius: 6px;
+      }
+
+      .activity-gallery .activity-img {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: cover;
+      }
+
+      /* 手机（窄屏）改成两列：三列在图小的时候太挤，两列看着更舒服 */
+      @media (max-width: 480px) {
+        .activity-gallery {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 5px;
+        }
+      }
+
+      .activity-gallery .activity-figure {
+        margin: 0;
+      }
+
+      /* ======================================================================
+         ★ 音乐卡片（动态里转发的一首歌）
+         ----------------------------------------------------------------------
+         · 点「展开歌词」→ 显示编号歌词，玩家数第几句
+         · 封面用 CSS 占位，换成自己的图：把 <div class="music-cover"> 里
+           改成 <img src 填 images/music/xxx.jpg alt="">
+         · 不带平台名（避免版权问题）
+         ====================================================================== */
+      .music-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 10px;
+        padding: 10px;
+        background: var(--bg-page);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        max-width: 480px;
+      }
+
+      /* 封面：默认 CSS 占位（渐变 + 首字），零版权风险 */
+      .music-cover {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.92);
+        background: linear-gradient(135deg, #2b5876, #4e4376);
+        user-select: none;
+      }
+
+      .music-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* 播放小三角（装饰） */
+      .music-cover::after {
+        content: "";
+        position: absolute;
+        right: 4px;
+        bottom: 4px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid rgba(255, 255, 255, 0.85);
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      }
+
+      .music-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .music-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.35;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .music-artist {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-top: 3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 展开歌词 */
+      .lyric-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 10px;
+        height: 30px;
+        padding: 0 13px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        background: #fff;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .lyric-toggle:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+      }
+
+      .lyric-toggle.open {
+        border-color: var(--brand);
+        color: var(--brand);
+        background: var(--brand-light);
+      }
+
+      .lyric-box {
+        margin-top: 10px;
+        padding: 14px 16px;
+        background: var(--bg-page);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        max-width: 560px;
+      }
+
+      .lyric-box.hidden {
+        display: none;
+      }
+
+      .lyric-line {
+        display: flex;
+        gap: 10px;
+        font-size: 0.95rem;
+        line-height: 1.9;
+        color: var(--text-primary);
+        letter-spacing: 0.01em;
+      }
+
+      .lyric-line + .lyric-line {
+        margin-top: 2px;
+      }
+
+      .lyric-num {
+        flex: 0 0 22px;
+        text-align: right;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        user-select: none;
+        padding-top: 2px;
+      }
+
+      .lyric-text {
+        flex: 1;
+        min-width: 0;
+        word-break: break-word;
+      }
+
+      /* 中英双语：第二行小一号、浅一点 */
+      .lyric-text .en {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--text-tertiary);
+        margin-top: 1px;
+      }
+
+      /* 歌词文字：不要斜体、不要灰色
+         （斜体 + 深色底 + 小字号 = 看起来发虚，所以统一成正体） */
+      .lyric-text .todo {
+        color: inherit;
+        font-style: normal;
+      }
+
+      @media (max-width: 480px) {
+        .music-card {
+          max-width: none;
+        }
+        .lyric-box {
+          max-width: none;
+          padding: 12px;
+        }
+      }
+
+      /* 底部操作条 */
+      .activity-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .activity-like,
+      .activity-reply-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 32px;
+        padding: 0 15px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #fff;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+
+      .activity-like .num,
+      .activity-reply-btn .num {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .activity-like:hover,
+      .activity-reply-btn:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+      }
+
+      .activity-reply-btn .fa {
+        font-size: 0.9rem;
+        line-height: 1;
+      }
+
+      /* 已点赞 / 已展开回复 */
+      .activity-like.liked,
+      .activity-reply-btn.open {
+        border-color: var(--brand);
+        color: var(--brand);
+        background: var(--brand-light);
+      }
+
+      /* ===== 回复区（默认收起，点「回复」展开）===== */
+      .activity-replies {
+        margin-top: 10px;
+        padding: 12px 14px;
+        background: var(--bg-page);
+        border-radius: 10px;
+      }
+
+      .activity-replies.hidden {
+        display: none;
+      }
+
+      .reply-item {
+        display: flex;
+        gap: 10px;
+        padding: 9px 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .reply-item:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+
+      .reply-item .avatar {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .reply-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .reply-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .reply-text {
+        font-size: 0.88rem;
+        line-height: 1.7;
+        color: var(--text-primary);
+        margin-top: 2px;
+        word-break: break-word;
+      }
+
+      .reply-time {
+        font-size: 0.74rem;
+        color: var(--text-tertiary);
+        margin-top: 3px;
+      }
+
+      /* 回复输入框 */
+      .reply-input {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+      }
+
+      .reply-input input {
+        flex: 1;
+        height: 34px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 17px;
+        font-size: 0.84rem;
+        font-family: inherit;
+        background: #fff;
+        color: var(--text-primary);
+        outline: none;
+      }
+
+      .reply-input input:focus {
+        border-color: var(--brand);
+      }
+
+      .reply-input button {
+        height: 34px;
+        padding: 0 16px;
+        border: none;
+        border-radius: 17px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.82rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .reply-input button:hover {
+        background: var(--brand-dark);
+      }
+
+      .reply-empty {
+        font-size: 0.84rem;
+        color: var(--text-tertiary);
+        padding: 4px 0 2px;
+      }
+
+      /* ======================================================================
+         ★ 留言墙「发送」按钮：加宽一点，别让「发送」两个字换行
+         ====================================================================== */
+      .guestbook-input input {
+        flex: 1;
+        min-width: 0;
+        height: 38px;
+        padding: 0 14px;
+        font-family: inherit;
+      }
+
+      .guestbook-input button {
+        flex: 0 0 auto;
+        min-width: 68px;
+        height: 38px;
+        padding: 0 18px;
+        font-family: inherit;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      /* ======================================================================
+         ★ 帖子列表为空时（该用户还没发过帖子）
+         怎么用见下面帖子列表那里的注释
+         ====================================================================== */
+      .profile-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 70px 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        text-align: center;
+      }
+
+      .profile-empty .icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--bg-page);
+        color: var(--text-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+      }
+
+      .profile-empty .msg {
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+      }
+
+      .profile-empty .sub {
+        font-size: 0.82rem;
+        color: var(--text-tertiary);
+      }
+
+      @media (max-width: 768px) {
+        .activity-box {
+          padding: 14px;
+        }
+        .activity-figure img {
+          max-height: 440px;
+        }
+        .activity-like,
+        .activity-reply-btn {
+          padding: 0 11px;
+        }
+
+        /* 小屏：缩小内外边距，免得留言墙的「发送」按钮被挤出屏幕 */
+        .container {
+          padding: 0 14px;
+        }
+        .profile-card {
+          padding: 22px 14px;
+        }
+        .guestbook-input {
+          gap: 6px;
+        }
+        .guestbook-input button {
+          min-width: 58px;
+          padding: 0 14px;
+        }
+      }
+
+      /* ===== 浏览历史页 ===== */
+      .history-header {
+        margin-bottom: 24px;
+      }
+
+      .history-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .history-header p {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .history-filters {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .history-search {
+        flex: 1;
+        min-width: 220px;
+        position: relative;
+      }
+
+      .history-search input {
+        width: 100%;
+        height: 40px;
+        padding: 0 16px 0 40px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--bg-card);
+        font-size: 0.85rem;
+        outline: none;
+      }
+
+      .history-search input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.1);
+      }
+
+      .history-search i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-tertiary);
+        font-size: 0.85rem;
+      }
+
+      .history-filters select {
+        height: 40px;
+        padding: 0 32px 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--bg-card);
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L2 4h8z' fill='%238F959E'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+      }
+
+      .history-filters select:focus {
+        border-color: var(--brand);
+      }
+
+      .btn-clear {
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-clear:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .history-group {
+        margin-bottom: 28px;
+      }
+
+      .history-group-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        padding-left: 4px;
+      }
+
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .history-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.15s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .history-item:hover {
+        background: #fafbfc;
+        border-color: #c9d3e0;
+        box-shadow: var(--shadow-md);
+      }
+
+      .history-item .main {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .history-item .title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .history-item .meta {
+        display: flex;
+        gap: 12px;
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        flex-wrap: wrap;
+      }
+
+      .history-item .time {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        white-space: nowrap;
+      }
+
+      /* 空状态 */
+      .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: var(--text-secondary);
+      }
+
+      .empty-state i {
+        font-size: 3rem;
+        color: #d0d5dd;
+        margin-bottom: 16px;
+      }
+
+      .empty-state h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .empty-state p {
+        font-size: 0.85rem;
+        margin-bottom: 24px;
+      }
+
+      .btn-back {
+        display: inline-block;
+        padding: 9px 28px;
+        border-radius: 20px;
+        background: var(--brand);
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: background 0.15s;
+      }
+
+      .btn-back:hover {
+        background: var(--brand-hover);
+      }
+
+      /* ===== 帖子详情页 ===== */
+      .thread-layout {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 28px;
+        align-items: start;
+      }
+
+      .thread-main {
+        min-width: 0;
+      }
+
+      .breadcrumb {
+        font-size: 0.82rem;
+        color: var(--text-tertiary);
+        margin-bottom: 20px;
+      }
+
+      .breadcrumb a {
+        color: var(--text-tertiary);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        color: var(--brand);
+      }
+
+      .breadcrumb span {
+        margin: 0 6px;
+      }
+
+      .thread-original {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 32px 36px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .thread-title {
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.35;
+        margin-bottom: 18px;
+        letter-spacing: -0.02em;
+      }
+
+      .thread-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+
+      .thread-author .avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        color: var(--brand);
+        font-weight: 600;
+      }
+
+      .thread-author .info .name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .badge-op {
+        font-size: 0.68rem;
+        background: var(--brand-light);
+        color: var(--brand);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .thread-author .info .meta {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+      }
+
+      .thread-content {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        line-height: 1.8;
+        margin-bottom: 22px;
+      }
+
+      .thread-content p {
+        margin-bottom: 12px;
+      }
+
+      .thread-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border-light);
+      }
+
+      .thread-actions button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 18px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .thread-actions button:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+        background: var(--brand-light);
+      }
+
+      .thread-actions button.liked {
+        border-color: var(--brand);
+        color: var(--brand);
+        background: var(--brand-light);
+      }
+
+      /* 评论区 */
+      .comment-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 28px 36px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .comment-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .comment-header h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .comment-header .count {
+        color: var(--text-tertiary);
+        font-weight: 400;
+      }
+
+      .comment-sort {
+        display: flex;
+        gap: 4px;
+      }
+
+      .comment-sort button {
+        padding: 4px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: transparent;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .comment-sort button.active {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+      }
+
+      /* 楼层 */
+      .floor {
+        display: flex;
+        gap: 18px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .floor:last-child {
+        border-bottom: none;
+      }
+
+      .floor-left {
+        width: 48px;
+        flex-shrink: 0;
+        text-align: center;
+      }
+
+      .floor-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: var(--brand);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .floor-name {
+        font-size: 0.72rem;
+        color: var(--text-tertiary);
+        word-break: break-all;
+      }
+
+      .floor-right {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .floor-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+
+      .floor-number {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .floor-badge {
+        font-size: 0.68rem;
+        background: var(--brand-light);
+        color: var(--brand);
+        padding: 1px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .floor-time {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+      }
+
+      .floor-text {
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        line-height: 1.7;
+        margin-bottom: 10px;
+      }
+
+      .floor-quote {
+        background: var(--bg-page);
+        border-left: 3px solid var(--border);
+        padding: 10px 14px;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .floor-quote .quote-author {
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+      }
+
+      .floor-actions {
+        display: flex;
+        gap: 18px;
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+      }
+
+      .floor-actions span {
+        cursor: pointer;
+        transition: color 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .floor-actions span:hover {
+        color: var(--brand);
+      }
+
+      /* 回复框 */
+      .reply-box {
+        margin-top: 22px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border-light);
+      }
+
+      .reply-box textarea {
+        width: 100%;
+        min-height: 88px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-family: inherit;
+        resize: vertical;
+        outline: none;
+        background: var(--bg-page);
+        color: var(--text-primary);
+        line-height: 1.6;
+      }
+
+      .reply-box textarea:focus {
+        border-color: var(--brand);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(26, 95, 180, 0.1);
+      }
+
+      .reply-box .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+
+      .btn-reply {
+        padding: 9px 28px;
+        border-radius: 20px;
+        border: none;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-reply:hover {
+        background: var(--brand-hover);
+      }
+
+      /* 分页 */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 28px 0 8px;
+        margin-top: 12px;
+        border-top: 1px solid var(--border-light);
+      }
+
+      .page-btn {
+        min-width: 38px;
+        height: 38px;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+
+      .page-btn:hover {
+        border-color: var(--brand);
+        color: var(--brand);
+        background: var(--brand-light);
+      }
+
+      .page-btn.active {
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+        pointer-events: none;
+      }
+
+      .page-btn.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      .page-ellipsis {
+        padding: 0 4px;
+        color: var(--text-tertiary);
+        font-size: 0.85rem;
+      }
+
+      /* 右侧辅助栏 */
+      .thread-sidebar {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .author-card {
+        text-align: center;
+      }
+
+      .author-card .avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: var(--brand);
+        margin: 0 auto 12px;
+        font-weight: 600;
+      }
+
+      .author-card .name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+      }
+
+      .author-card .level {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        margin-bottom: 14px;
+      }
+
+      .author-card .stats {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+      }
+
+      .author-card .stats .num {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .btn-follow-sm {
+        width: 100%;
+        padding: 7px 0;
+        border-radius: 16px;
+        border: 1px solid var(--brand);
+        background: transparent;
+        color: var(--brand);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-follow-sm:hover {
+        background: var(--brand-light);
+      }
+
+      .btn-follow-sm.following {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .related-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .related-list li {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        cursor: pointer;
+        transition: color 0.12s;
+        color: var(--text-secondary);
+      }
+
+      .related-list li:last-child {
+        border-bottom: none;
+      }
+
+      .related-list li:hover {
+        color: var(--brand);
+      }
+
+      /* ===== 搜索结果页 ===== */
+      .search-header {
+        margin-bottom: 24px;
+      }
+
+      .search-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .search-header p {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .search-header p strong {
+        color: var(--brand);
+        font-weight: 600;
+      }
+
+      .search-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 24px;
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        padding: 4px;
+        box-shadow: var(--shadow-sm);
+        width: fit-content;
+      }
+
+      .search-tabs button {
+        padding: 8px 28px;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .search-tabs button:hover {
+        background: var(--bg-page);
+      }
+
+      .search-tabs button.active {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .search-results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* 用户结果卡片 */
+      .user-result-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px 26px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        transition: all 0.15s;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .user-result-card:hover {
+        border-color: #c9d3e0;
+        box-shadow: var(--shadow-md);
+      }
+
+      .user-result-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--brand);
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .user-result-info {
+        flex: 1;
+      }
+
+      .user-result-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .user-result-name mark {
+        background: #fff3b0;
+        color: var(--text-primary);
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+
+      .user-result-desc {
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .user-result-stats {
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        display: flex;
+        gap: 16px;
+      }
+
+      .user-result-actions {
+        flex-shrink: 0;
+      }
+
+      .btn-view-profile {
+        padding: 8px 20px;
+        border-radius: 20px;
+        border: 1px solid var(--brand);
+        background: transparent;
+        color: var(--brand);
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .btn-view-profile:hover {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      /* 帖子结果卡片 */
+      .post-result-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px 26px;
+        transition: all 0.15s;
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .post-result-card:hover {
+        border-color: #c9d3e0;
+        box-shadow: var(--shadow-md);
+      }
+
+      .post-result-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        line-height: 1.4;
+      }
+
+      .post-result-title mark {
+        background: #fff3b0;
+        color: var(--text-primary);
+        padding: 0 2px;
+        border-radius: 2px;
+      }
+
+      .post-result-excerpt {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .post-result-meta {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 0.78rem;
+        color: var(--text-tertiary);
+        flex-wrap: wrap;
+      }
+
+      .post-result-meta .author {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      /* 无搜索结果 */
+      .no-result {
+        text-align: center;
+        padding: 80px 20px;
+      }
+
+      .no-result i {
+        font-size: 3.5rem;
+        color: #d0d5dd;
+        margin-bottom: 20px;
+      }
+
+      .no-result h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .no-result p {
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+      }
+
+      /* ===== 弹窗 ===== */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+      }
+
+      .modal {
+        background: #fff;
+        border-radius: var(--radius-lg);
+        padding: 32px 36px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      }
+
+      .modal h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .modal p {
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        margin-bottom: 28px;
+        line-height: 1.5;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+
+      .modal-actions button {
+        padding: 9px 24px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .modal-actions .btn-cancel {
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+      .modal-actions .btn-cancel:hover {
+        border-color: #ccc;
+      }
+
+      .modal-actions .btn-confirm {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .modal-actions .btn-confirm:hover {
+        background: #d44a0b;
+      }
+
+      /* ===== 响应式 ===== */
+      @media (max-width: 1280px) {
+        .home-layout {
+          grid-template-columns: 1fr 260px;
+          gap: 20px;
+        }
+        .profile-layout {
+          grid-template-columns: 260px 1fr;
+          gap: 24px;
+        }
+        .thread-layout {
+          grid-template-columns: 1fr 240px;
+          gap: 24px;
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .home-layout {
+          grid-template-columns: 1fr;
+        }
+        .sidebar-right {
+          position: static;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+        .profile-layout {
+          grid-template-columns: 1fr;
+        }
+        .profile-sidebar {
+          position: static;
+        }
+        .thread-layout {
+          grid-template-columns: 1fr;
+        }
+        .thread-sidebar {
+          position: static;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .navbar .container {
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .sidebar-right {
+          grid-template-columns: 1fr;
+        }
+        .thread-sidebar {
+          grid-template-columns: 1fr;
+        }
+        .search-tabs {
+          width: 100%;
+        }
+        .search-tabs button {
+          flex: 1;
+          padding: 8px 0;
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ======================================================================
+         ★ 点赞图标（图片版）
+         显示态：images/icon/like.png      点过赞：images/icon/like-on.png
+         ====================================================================== */
+      .like-icon {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 4px;
+        vertical-align: -3px;
+        background-image: url("images/icon/like.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+      }
+
+      button.liked .like-icon {
+        background-image: url("images/icon/like-on.png");
+      }
+
+      /* 高分屏用 128px 的原图，更清晰 */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+        .like-icon {
+          background-image: url("images/icon/like@128.png");
+        }
+        button.liked .like-icon {
+          background-image: url("images/icon/like-on@128.png");
+        }
+      }
+
+      /* 导航栏官方图标（原来是「拾」字） */
+      .logo-icon {
+        overflow: hidden;
+        background: transparent;
+        padding: 0;
+      }
+
+      .logo-icon img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .logo-icon img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      /* ======================================================================
+         ★ 点图放大（灯箱）
+         ====================================================================== */
+      .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 20, 30, 0.94);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        cursor: zoom-out;
+      }
+
+      .lightbox.show {
+        display: flex;
+      }
+
+      .lightbox img {
+        max-width: 100%;
+        max-height: 88vh;
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      .lightbox .close {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .lightbox .close:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .lightbox .hint {
+        position: absolute;
+        bottom: 22px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.78rem;
+        pointer-events: none;
+      }
+
+      body.lightbox-open {
+        overflow: hidden;
+      }
+          /* ======================================================================
+         ★★★ 主题：昏黄灯光（暗色）★★★
+         ----------------------------------------------------------------------
+         想还原成亮色：把这一整段（从这个注释到本段结尾）删掉即可。
+         想微调：
+           · 更亮/更暗 → 改 --bg-page
+           · 灯光更暖 → 改 body 里那几个 radial-gradient 的 rgba()
+           · 卡片更透 → 改 .profile-card / .thread-original 等的 background 透明度
+         ====================================================================== */
+      :root {
+        /* 底色：深黑，但不是纯黑 */
+        --bg-page: #131110;
+        --bg-card: #1a1714;
+
+        /* 文字：暖白（不用纯白，免得太刺眼） */
+        --text-primary: #ece5d8;
+        --text-secondary: #a79e8e;
+        --text-tertiary: #6f685c;
+
+        /* 品牌色：暖金（原来那个 --brand-light 也一并覆盖，大小写都写一遍 */
+        --brand: #d9a441;
+        --brand-light: #2a2114;
+        --brand-hover: #e8b95c;
+        --text-primary: #ece5d8;
+        --text-primary-light: #ece5d8;
+
+        /* 描边：暖褐 */
+        --border: #2e2921;
+        --border-light: #221e19;
+
+        /* 强调色 */
+        --accent: #e08a3c;
+        --accent-light: #2a1d10;
+
+        /* 阴影：黑底上加深一点 */
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+        --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.55);
+        --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+      }
+
+      /* ======================================================================
+         ★★★ 背景图（明天想换图，改这里就行）★★★
+         ----------------------------------------------------------------------
+         【怎么换图】
+           1. 把新图片放进 images\ 文件夹，用英文小写名字，比如 images/bg2.jpg
+           2. 把下面第 ③ 行的 url("images/bg-profile.jpg") 改成新名字
+              → 注意：路径不要带盘符（别写 D:\），也不要以 / 开头
+           3. 保存刷新即可（记得 Ctrl+F5 强刷）
+
+         【怎么调上下留白】
+           改 background-size 里的第三个值 "auto 80%"
+             · 80% = 图片占屏幕高度的 80%，剩下 20% 上下平分（就是留白）
+             · 想更满 → 调大，比如 auto 90%
+             · 想留更多 → 调小，比如 auto 68%
+
+         【想换回纯色 / 去掉背景图】
+           把下面第 ③ 行 url("images/bg-profile.jpg") 那一行删掉即可，
+           删完就剩底色 #131110（深黑）加上下淡出，也很好看。
+
+         【觉得图太亮 / 太暗】
+           改第 ② 行 rgba(12, 10, 9, 0.62) 和 rgba(12, 10, 9, 0.46)
+             · 数字调大 → 图更暗（字更清楚）
+             · 数字调小 → 图更亮（更显眼）
+         ====================================================================== */
+      body {
+        background-color: #131110;
+        background-image:
+          /* ① 上边和下边淡出到暗色 —— 让图不顶边，有呼吸感 */
+          linear-gradient(
+            180deg,
+            #131110 0%,
+            rgba(19, 17, 16, 0.9) 3%,
+            rgba(19, 17, 16, 0) 13%,
+            rgba(19, 17, 16, 0) 87%,
+            rgba(19, 17, 16, 0.9) 97%,
+            #131110 100%
+          ),
+          /* ② 整体压暗一层，保证卡片上的字看得清 */
+          linear-gradient(180deg, rgba(12, 10, 9, 0.62), rgba(12, 10, 9, 0.46)),
+          /* ③ 背景图 ← 换图改这一行 */
+          url("images/bg-profile.jpg");
+        background-size: 100% 100%, 100% 100%, auto 80%;
+        background-position: center center, center center, center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        color: #ece5d8;
+      }
+
+      /* 手机上图片小一点，免得裁得太狠、留白太少 */
+      @media (max-width: 768px) {
+        body {
+          background-size: 100% 100%, 100% 100%, auto 64%;
+        }
+      }
+
+      /* ===== 半透明磨砂卡片 ===== */
+      .profile-card,
+      .profile-post-item,
+      .profile-empty,
+      .activity-box,
+      .guestbook-item,
+      .sidebar-card,
+      .thread-original,
+      .comment-section,
+      .history-item,
+      .modal {
+        background: rgba(255, 236, 200, 0.07) !important;
+        backdrop-filter: blur(12px) saturate(1.15);
+        -webkit-backdrop-filter: blur(12px) saturate(1.15);
+        border-color: rgba(255, 214, 150, 0.13) !important;
+      }
+
+      /* ===== 导航栏：暗色玻璃 + 底部暖光细线 ===== */
+      .navbar {
+        background: rgba(12, 10, 8, 0.72) !important;
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        border-bottom: 1px solid rgba(255, 206, 140, 0.14) !important;
+      }
+
+      .logo {
+        color: #e8c37a !important;
+      }
+
+      /* 官方图标：在暗底上加一点暖光，免得深蓝线条看不见 */
+      .logo-icon {
+        box-shadow: 0 0 0 1px rgba(255, 206, 140, 0.18),
+                    0 0 14px rgba(255, 190, 110, 0.22);
+        filter: brightness(1.35) saturate(0.85) drop-shadow(0 0 4px rgba(255, 200, 130, 0.35));
+      }
+
+      .nav-links a {
+        color: #a79e8e !important;
+      }
+
+      .nav-links a:hover,
+      .nav-links a.active {
+        color: #e8c37a !important;
+      }
+
+      .nav-search input {
+        background: rgba(255, 236, 200, 0.05) !important;
+        border-color: rgba(255, 214, 150, 0.14) !important;
+        color: #ece5d8 !important;
+      }
+
+      .nav-search input::placeholder {
+        color: #6f685c !important;
+      }
+
+      .nav-search input:focus {
+        background: rgba(255, 236, 200, 0.08) !important;
+        border-color: rgba(217, 164, 65, 0.55) !important;
+        box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.12) !important;
+      }
+
+      .nav-search-icon {
+        border-color: #6f685c !important;
+      }
+
+      .nav-search-icon::after {
+        background: #6f685c !important;
+      }
+
+      /* ===== 小元素补色 ===== */
+      .profile-stat .num {
+        color: #e8c37a;
+      }
+
+      .profile-empty .icon {
+        background: rgba(255, 236, 200, 0.06);
+        color: #a79e8e;
+      }
+
+      .music-card {
+        background: rgba(255, 236, 200, 0.04);
+        border-color: rgba(255, 214, 150, 0.12);
+      }
+
+      .music-cover {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .lyric-box {
+        background: rgba(255, 236, 200, 0.035);
+        border-color: rgba(255, 214, 150, 0.10);
+      }
+
+      .lyric-toggle,
+      .activity-like,
+      .activity-reply-btn {
+        background: rgba(255, 236, 200, 0.05) !important;
+        border-color: rgba(255, 214, 150, 0.16) !important;
+        color: #a79e8e !important;
+      }
+
+      .lyric-toggle:hover,
+      .activity-like:hover,
+      .activity-reply-btn:hover,
+      .lyric-toggle.open,
+      .activity-like.liked,
+      .activity-reply-btn.open {
+        border-color: rgba(217, 164, 65, 0.6) !important;
+        color: #e8c37a !important;
+        background: rgba(217, 164, 65, 0.12) !important;
+      }
+
+      .activity-replies {
+        background: rgba(255, 236, 200, 0.03);
+      }
+
+      .reply-input input {
+        background: rgba(255, 236, 200, 0.05) !important;
+        border-color: rgba(255, 214, 150, 0.16) !important;
+        color: #ece5d8 !important;
+      }
+
+      .reply-input button,
+      .guestbook-input button {
+        background: #c9963a !important;
+        color: #14120f !important;
+      }
+
+      .reply-input button:hover,
+      .guestbook-input button:hover {
+        background: #dcac4c !important;
+      }
+
+      .guestbook-input input {
+        background: rgba(255, 236, 200, 0.05) !important;
+        border-color: rgba(255, 214, 150, 0.16) !important;
+        color: #ece5d8 !important;
+      }
+
+      .profile-tabs {
+        background: rgba(255, 236, 200, 0.04) !important;
+        border-color: rgba(255, 214, 150, 0.12) !important;
+      }
+
+      .profile-tabs button {
+        color: #a79e8e !important;
+      }
+
+      .profile-tabs button.active {
+        color: #e8c37a !important;
+      }
+
+      .activity-figure {
+        background: rgba(255, 236, 200, 0.035);
+        border-color: rgba(255, 214, 150, 0.10);
+      }
+
+      /* 点赞图标：暗底上太暗了，用滤镜提亮成暖金（图片本身是深蓝线条） */
+      .like-icon {
+        filter: brightness(0) saturate(100%) invert(78%) sepia(38%) saturate(568%) hue-rotate(357deg) brightness(95%) contrast(88%);
+      }
+
+      .activity-like.liked .like-icon {
+        filter: brightness(0) saturate(100%) invert(72%) sepia(52%) saturate(700%) hue-rotate(357deg) brightness(98%) contrast(92%);
+      }
+
+      /* ===== 滚动条也调暗 ===== */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #131110;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2e2921;
+        border-radius: 5px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #4a4030;
+      }
+
+      /* ======================================================================
+         ★★★ 页面加密：内容模糊 + 密码框 ★★★
+         ----------------------------------------------------------------------
+         · 密码正确 → 解除模糊（本标签页记住，关掉标签页需重新输入）
+         · 想改密码 → 搜 JS 里的 PAGE_PASSWORD
+         · 想取消加密 → 把下面这段 CSS 和对应的 JS + HTML 都删掉
+         ====================================================================== */
+      /* 未解锁时：内容和导航都模糊掉，并且不能点 */
+      body.locked .navbar,
+      body.locked .page {
+        filter: blur(16px) brightness(0.5) saturate(0.7);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      body.locked {
+        overflow: hidden;
+      }
+
+      /* 解锁后：明确恢复清晰
+         注意：这里故意不加 transition —— 加过渡会让 blur 在某些浏览器里卡住 */
+      body:not(.locked) .navbar,
+      body:not(.locked) .page {
+        filter: none;
+        pointer-events: auto;
+        user-select: auto;
+      }
+
+      /* ===== 锁屏：铺满全屏，中央一个磨砂密码框 ===== */
+      .lock-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: radial-gradient(
+            900px 600px at 50% 40%,
+            rgba(255, 196, 110, 0.10),
+            transparent 70%
+          ),
+          rgba(8, 7, 6, 0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+
+      .lock-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .lock-box {
+        width: 100%;
+        max-width: 380px;
+        padding: 34px 30px 30px;
+        text-align: center;
+        background: rgba(30, 26, 21, 0.72);
+        backdrop-filter: blur(18px) saturate(1.2);
+        -webkit-backdrop-filter: blur(18px) saturate(1.2);
+        border: 1px solid rgba(255, 214, 150, 0.16);
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6),
+          inset 0 1px 0 rgba(255, 226, 180, 0.07);
+      }
+
+      /* 锁图标（纯 CSS 画的挂锁） */
+      .lock-icon {
+        position: relative;
+        width: 34px;
+        height: 26px;
+        margin: 0 auto 18px;
+        border: 2px solid #d9a441;
+        border-radius: 5px;
+        box-shadow: 0 0 16px rgba(217, 164, 65, 0.35);
+      }
+
+      .lock-icon::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 100%;
+        transform: translateX(-50%);
+        width: 18px;
+        height: 14px;
+        border: 2px solid #d9a441;
+        border-bottom: none;
+        border-radius: 9px 9px 0 0;
+      }
+
+      .lock-icon::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 8px;
+        transform: translateX(-50%);
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #d9a441;
+      }
+
+      .lock-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #ece5d8;
+        letter-spacing: 0.5px;
+      }
+
+      .lock-desc {
+        margin: 10px 0 22px;
+        font-size: 0.86rem;
+        color: #a79e8e;
+        line-height: 1.6;
+      }
+
+      .lock-input-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .lock-input-row input {
+        flex: 1;
+        min-width: 0;
+        height: 42px;
+        padding: 0 14px;
+        font-size: 1rem;
+        font-family: inherit;
+        letter-spacing: 2px;
+        color: #ece5d8;
+        background: rgba(255, 236, 200, 0.06);
+        border: 1px solid rgba(255, 214, 150, 0.18);
+        border-radius: 10px;
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .lock-input-row input:focus {
+        border-color: rgba(217, 164, 65, 0.7);
+        box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.14);
+        background: rgba(255, 236, 200, 0.09);
+      }
+
+      .lock-input-row input::placeholder {
+        color: #6f685c;
+        letter-spacing: 1px;
+      }
+
+      .lock-input-row button {
+        flex: 0 0 auto;
+        height: 42px;
+        padding: 0 22px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        font-weight: 600;
+        color: #14120f;
+        background: linear-gradient(180deg, #e0b158, #c9963a);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+      }
+
+      .lock-input-row button:hover {
+        background: linear-gradient(180deg, #ecc472, #d9a441);
+      }
+
+      .lock-input-row button:active {
+        transform: translateY(1px);
+      }
+
+      /* 错误提示 */
+      .lock-hint {
+        min-height: 20px;
+        margin-top: 14px;
+        font-size: 0.82rem;
+        color: #e0705a;
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+
+      .lock-hint.show {
+        opacity: 1;
+      }
+
+      /* 输错时抖一下 */
+      @keyframes lockShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-7px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(3px); }
+      }
+
+      .lock-box.shake {
+        animation: lockShake 0.4s ease;
+      }
+
+      @media (max-width: 480px) {
+        .lock-box {
+          padding: 28px 22px 24px;
+        }
+        .lock-input-row {
+          flex-direction: column;
+        }
+        .lock-input-row button {
+          width: 100%;
+          padding: 0;
+        }
+      }
+
+</style>
+  </head>
+  <body class="locked">
+    <header class="navbar">
+      <div class="container">
+        <div class="nav-left">
+          <a href="index.html" class="logo">
+            <span class="logo-icon"
+              ><img src="images/icon/logo.png" alt="拾光论坛"
+            /></span>
+            拾光论坛
+          </a>
+          <nav class="nav-links">
+            <a href="index.html">首页</a>
+            <a href="index.html">历史浏览</a>
+          </nav>
+        </div>
+        <div class="nav-search">
+          <span class="nav-search-icon" aria-hidden="true"></span>
+          <input
+            type="text"
+            placeholder="搜索帖子、用户或关键词"
+            id="globalSearch"
+          />
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== 页面二：用户个人主页 ===== -->
+    <div class="page active" id="page-profile">
+      <div class="container">
+        <div class="profile-layout">
+          <!-- 左侧个人资料 -->
+          <aside class="profile-sidebar">
+            <div class="profile-card">
+              <!-- ★【1】头像：现在是文字「林」。想用图片：
+                     <div class="profile-avatar">林<img class="avatar-img" src="images/touxiang/01.jpg" alt=""></div>
+                     那个字是兜底，图片路径错了会显示它 -->
+              <div class="profile-avatar">
+                <img class="avatar-img" src="images/image_11.jpg" alt="" />
+              </div>
+              <!-- ★【2】昵称 -->
+              <div class="profile-name">浅浅的秋</div>
+              <!-- ★【3】个性签名 -->
+              <div class="profile-desc">慢下来，感受生活的纹理</div>
+              <!-- ★【4】三个数字：关注 / 粉丝 / 获赞（纯展示，点不动）-->
+              <div class="profile-stats">
+                <div class="profile-stat clickable" onclick="showFollowList()" title="查看关注列表">
+                  <div class="num">0</div>
+                  <div class="label">关注</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="num">0</div>
+                  <div class="label">粉丝</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="num">0</div>
+                  <div class="label">获赞</div>
+                </div>
+              </div>
+              <!-- ★【5】签名档（不要就整行删掉）-->
+              <div class="profile-motto">悲喜难自渡 他人难悟</div>
+
+              <!-- ★【6】留言墙：玩家可以留言。预设留言在 guestbook-list 里，
+                     一条 = 一个 guestbook-item，复制整块加一条 -->
+            </div>
+          </aside>
+
+          <!-- 右侧内容 -->
+          <main class="profile-content">
+            <div class="profile-tabs">
+              <button class="active" onclick="switchProfileTab(this, 'posts')">
+                帖子
+              </button>
+              <button onclick="switchProfileTab(this, 'activity')">动态</button>
+            </div>
+
+            <!-- ==================================================================
+               ★【7】帖子列表
+               ------------------------------------------------------------------
+               【情况一】这个用户有帖子 —— 现在就是这种，保持不动。
+                         一条 = 一个 profile-post-item，复制整块加一条。
+                         想让帖子能点开，把 onclick="openPost()" 换成
+                         onclick="location.href='post-c1.html'"
+
+               【情况二】这个用户一篇帖子都没有 —— 做两件事：
+                 1) 把下面【情况一】那一整块删掉（连它的 ＜/div＞ 一起删）
+                 2) 把下面【情况二】那块的注释去掉（删掉 ＜！－－ 和 －－＞）
+                 这样页面只显示「该用户还没有发布过帖子」，
+                 不会出现空的白色方框。
+
+               注意：这个 div 带 id="profilePostList"，
+                     Tab 切换靠它找人，【情况二】的 div 也要保留这个 id。
+               ================================================================== -->
+
+            <!-- ===== 【情况一】有帖子 ===== -->
+            <div class="profile-post-list" id="profilePostList">
+              <div class="profile-empty">
+                <div class="msg">该用户还没有发布过帖子</div>
+                <div class="sub">TA 的主页还在慢慢充实中</div>
+              </div>
+            </div>
+
+            <!-- ===== 动态（这个用户自己发的）===== -->
+            <!-- ★【8】动态：这里只放【这个用户自己发的】动态，没有发布栏。
+                     一条动态 = 一个 activity-item，复制整块加一条。
+
+                     配图（可选）：
+                       · 单图：用第一块那样，一个 activity-figure
+                       · 多图：用第三块那样，activity-gallery 里放几个 activity-figure
+                       · 不要图：把 activity-figure 整块删掉
+                     图片路径写在 src 里，和帖子页一样：images/xxx.jpg
+                     点图片会自动放大（灯箱）
+
+                     点赞 + 回复：
+                       · 点赞按钮上的数字 = 点赞数，玩家可点
+                       · 回复按钮上的数字 = 回复条数，点一下展开/收起回复区
+                       · 回复区里一条 = 一个 reply-item，复制整块加一条 -->
+            <div class="profile-post-list hidden" id="profileActivityList">
+              <div class="activity-box">
+                <div class="activity-list" id="activityList">
+                  <!-- ============ 动态 1：文字 + 单张配图 + 2 条回复 ============ -->
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-20 22:56</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">约会日</div>
+                  <div class="activity-gallery">
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/2.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/1.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/3.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                  </div>
+                                    <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">0</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <!-- 回复输入框：不想要就整块删掉 -->
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-21 1:10</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">现在感觉很幸福</div>
+                  <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">1</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <!-- 没有回复时显示这句，不想要就删掉 -->
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-23 16:35</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">秋天来了，翻到了年初他给我拍的照片，简直不要太美。</div>
+                  <div class="activity-figure">
+                    <img
+                      class="activity-img"
+                      src="images/xiaohao/5.jpg"
+                      alt="配图 1"
+                      
+                      decoding="async"
+                    />
+                  </div>
+                  <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">1</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-30 00:05</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">月末总结大会结束啦，辛苦老总啦~</div>
+                  <div class="activity-gallery">
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/8.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/9.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                    <div class="activity-figure">
+                      <img
+                        class="activity-img"
+                        src="images/xiaohao/11.jpg"
+                        alt="配图"
+                        
+                        decoding="async"
+                      />
+                    </div>
+                  </div>
+                  <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">1</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-10-11 2:45</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">其实那年那件事过去后，我就知道一定会有这一天，失去我所爱的人，我当初用这种恶行换来的一切，所谓荣华富贵，到最后不过浮云。或许已经是时候做好准备，去真正面对这一切。亲爱的三个女孩，我真的对不起你们。</div>
+                  <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">0</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <!-- 没有回复时显示这句，不想要就删掉 -->
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-28 23:40</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">我们在最终幕退场</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #2d2d3a, #6b4a4a);"></div>
+                    <div class="music-info">
+                      <div class="music-title">Love is Industry</div>
+                      <div class="music-artist">Jannie Kyo</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">The actor must be able to memorize his lines （演员需要熟记他的台词）
+</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">At end of scene we exit（我们在最终幕退场）
+</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo">Never go back（不会再返回）</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo">Why you can’t believe it？（为什么你无法相信呢？）</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">love is “industry”（爱是一种“工业”）</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">but she only built according to the specification for you（但她只是按照规格为你打造）</span></span></div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-10-01 21:50</div>
+                    </div>
+                  </div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #4a90d9, #2a5fa0);"></div>
+                    <div class="music-info">
+                      <div class="music-title">Zero (Live)</div>
+                      <div class="music-artist">欧阳靖 / 钱正昊 / Ghost（王琳凯）</div>
+                    </div>
+                  </div>
+
+
+                                  </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-27 20:05</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">束一个马尾 束起所有伤悲</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #7bc6a8, #4a8f6f);"></div>
+                    <div class="music-info">
+                      <div class="music-title">读心术</div>
+                      <div class="music-artist">卓文萱</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">束一个马尾 束起所有伤悲</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">不许有后悔 在我眼前乱飞  </span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo">女生的柔美 只有自信能给</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo"> 这秒钟不想爱 也不想谁 </span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">将照片撕毁 以为就会OK</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">为何有泪水 钻进我枕头内</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">7</span><span class="lyric-text"><span class="todo">上天爱捣鬼 爱将我给连累</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">8</span><span class="lyric-text"><span class="todo">下雨时不能吃也不能睡</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">9</span><span class="lyric-text"><span class="todo">是与非的对垒</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">10</span><span class="lyric-text"><span class="todo">爱得我好气馁好疲惫</span></span></div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-25 21:10</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">有意无意模仿你的习惯</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #5b6fd8, #8f6ed5);"></div>
+                    <div class="music-info">
+                      <div class="music-title">Your Favorite Song（你心至颂）</div>
+                      <div class="music-artist">Lavender</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">I'll be far away from you
+或许我终将离你远去</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">Will you fill my dreams
+那你愿意填满我的虚无的梦么</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo">come to me
+来到我身边</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo">don’ t leave me
+别离开我 拜托</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">I always open that diary
+闲来无事总是翻看那本日记</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">Not read carefully
+却只打开扉页 浅尝辄止</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">7</span><span class="lyric-text"><span class="todo">Cover my face
+仰头 盖住脸</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">8</span><span class="lyric-text"><span class="todo">like you
+有意无意模仿你的习惯</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">9</span><span class="lyric-text"><span class="todo">I hate the days
+厌恶那段时间</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">10</span><span class="lyric-text"><span class="todo">you spend with others
+你和他人一起度过的那些时日</span></span></div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-29 19:15</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">却愿意为一个人而改变</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #8a8f98, #4a4f58);"></div>
+                    <div class="music-info">
+                      <div class="music-title">Wei Cheng（围城）</div>
+                      <div class="music-artist">阿龙 + YEHAIYAHAN + Jahjah</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">每一个一闪而过的欲念</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">总在不经意间出现</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo"> 每一个人都有需要隐藏的一面</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo">不想被发现</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">藏了很多年那些执念</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">却愿意为一个人而改变</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">7</span><span class="lyric-text"><span class="todo">连自己都没发现在这以前</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">8</span><span class="lyric-text"><span class="todo">我们好像都没有说过什么誓言</span></span></div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-9-26 22:30</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">一定是优雅的邂逅</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #1b2a4a, #3a5a8c);"></div>
+                    <div class="music-info">
+                      <div class="music-title">最后通牒（「华语R&B艺术家"+"」音…）</div>
+                      <div class="music-artist">舵Diverseddie</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">一定是优雅的邂逅</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">启动诞生新物种</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo">每当想你时候遨游外太空</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo">摇晃桌转角的沙漏</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">点了点头你却假装不懂</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">害怕危险的瞳孔</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">7</span><span class="lyric-text"><span class="todo">倒计时的时钟在转动</span></span></div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-10-02 22:20</div>
+                    </div>
+                  </div>
+                  <!-- ★这首歌配一句话：改下面这行的文字 -->
+                  <div class="activity-text">就像是我们刚在一起那样温暖</div>
+
+                  <!-- 音乐卡片。封面想换图片：把下面 <div class="music-cover">首字</div> 换成
+                       <div class="music-cover"><img src="images/music/xxx.jpg" alt=""></div> -->
+                  <div class="music-card">
+                    <div class="music-cover" style="background: linear-gradient(135deg, #c8a24a, #6b7a3a);"></div>
+                    <div class="music-info">
+                      <div class="music-title">В последний раз（最后一次）</div>
+                      <div class="music-artist">Ансамбль Весёлые…</div>
+                    </div>
+                  </div>
+
+                  <button class="lyric-toggle" onclick="toggleLyrics(this)">
+                    <span class="fa fa-comment">▤</span> 展开歌词
+                  </button>
+
+                  <!-- 歌词区：1~10 句。玩家数第几句得出密码数字 -->
+                  <div class="lyric-box hidden">
+                    <div class="lyric-line"><span class="lyric-num">1</span><span class="lyric-text"><span class="todo">Всё напоминает о тебе
+一切都让我回忆起你</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">2</span><span class="lyric-text"><span class="todo">А ты нигде
+而你却无处可寻</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">3</span><span class="lyric-text"><span class="todo">Остался мир который вместе видел нас
+只剩下这见证我们的世界</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">4</span><span class="lyric-text"><span class="todo">В последний раз
+这最后一次</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">5</span><span class="lyric-text"><span class="todo">Комната с балконом и окном
+此刻阳光透过我房间的窗台倾泻</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">6</span><span class="lyric-text"><span class="todo">Светла сейчас
+如此和煦</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">7</span><span class="lyric-text"><span class="todo">Чиста как день который вместе видел нас
+就像是我们刚在一起那样温暖</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">8</span><span class="lyric-text"><span class="todo">В последний раз
+那最后一次</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">9</span><span class="lyric-text"><span class="todo">Время пройдёт, и ты забудешь всё, что было
+时间会冲淡一切，你会模糊从前的难以忘怀</span></span></div>
+                    <div class="lyric-line"><span class="lyric-num">10</span><span class="lyric-text"><span class="todo">С тобой у нас
+我们一起度过的曾经</span></span></div>
+                  </div>
+                </div>
+
+                <!-- ===== 第 13 条动态：文字 ===== -->
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-10-05 23:30</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">或许你可以去认识那个陌生的我了</div>
+                  <div class="activity-actions">
+                    <button class="activity-like" onclick="toggleActivityLike(this)">
+                      <span class="like-icon"></span>
+                      <span class="num">0</span>
+                    </button>
+                    <button class="activity-reply-btn" onclick="toggleActivityReplies(this)">
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <div class="reply-input">
+                      <input type="text" placeholder="回复这条动态…"
+                             onkeydown="if (event.key === 'Enter') addReply(this);" />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-item">
+                  <div class="activity-head">
+                    <div class="avatar">
+                      浅<img
+                        class="avatar-img"
+                        src="images/image_11.jpg"
+                        alt=""
+                        
+                        decoding="async"
+                        onerror="this.style.display = 'none'"
+                      />
+                    </div>
+                    <div class="activity-who">
+                      <div class="name">浅浅的秋</div>
+                      <div class="time">2026-10-17 4:05</div>
+                    </div>
+                  </div>
+                  <div class="activity-text">最后的时刻，希望家人平安。</div>
+                  <div class="activity-actions">
+                    <button
+                      class="activity-like"
+                      onclick="toggleActivityLike(this)"
+                    >
+                      <span class="like-icon"></span>
+                      <span class="num">0</span>
+                    </button>
+                    <button
+                      class="activity-reply-btn"
+                      onclick="toggleActivityReplies(this)"
+                    >
+                      <span class="fa fa-comment">↩</span> 回复
+                    </button>
+                  </div>
+                  <div class="activity-replies hidden">
+                    <!-- 没有回复时显示这句，不想要就删掉 -->
+                    <div class="reply-input">
+                      <input
+                        type="text"
+                        placeholder="回复这条动态…"
+                        onkeydown="if (event.key === 'Enter') addReply(this);"
+                      />
+                      <button onclick="addReply(this)">回复</button>
+                    </div>
+                  </div>
+                </div>
+          </main>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== Tab 切换：帖子 / 动态 =====
+      function switchProfileTab(btn, type) {
+        btn.parentElement.querySelectorAll("button").forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+
+        var posts = document.getElementById("profilePostList");
+        var activity = document.getElementById("profileActivityList");
+
+        posts.classList.add("hidden");
+        activity.classList.add("hidden");
+
+        if (type === "posts") posts.classList.remove("hidden");
+        if (type === "activity") activity.classList.remove("hidden");
+      }
+
+      // ===== 留言墙 =====
+      function addGuestbook() {
+        var input = document.getElementById("guestbookInput");
+        if (!input) return;
+        var text = input.value.trim();
+        if (!text) return;
+
+        var list = document.getElementById("guestbookList");
+        var item = document.createElement("div");
+        item.className = "guestbook-item";
+        item.innerHTML =
+          '<div class="avatar">我</div>' +
+          '<div class="content">' +
+          '<div class="name">我</div>' +
+          '<div class="text"></div>' +
+          '<div class="time">刚刚</div>' +
+          "</div>";
+        item.querySelector(".text").textContent = text;
+        list.insertBefore(item, list.firstChild);
+        input.value = "";
+      }
+
+      // ===== 动态：点赞 =====
+      function toggleActivityLike(btn) {
+        var numEl = btn.querySelector(".num");
+        var n = parseInt(numEl.textContent, 10) || 0;
+        if (btn.classList.toggle("liked")) {
+          numEl.textContent = n + 1;
+        } else {
+          numEl.textContent = Math.max(0, n - 1);
+        }
+      }
+
+      // ===== 动态：展开 / 收起回复 =====
+      function toggleActivityReplies(btn) {
+        var item = btn.closest(".activity-item");
+        if (!item) return;
+        var box = item.querySelector(".activity-replies");
+        if (!box) return;
+        var open = box.classList.toggle("hidden") === false;
+        btn.classList.toggle("open", open);
+
+        // 没有回复时，显示「还没有回复」
+        var empty = box.querySelector(".reply-empty");
+        if (empty) {
+          var real = box.querySelectorAll(".reply-item").length;
+          empty.style.display = real ? "none" : "";
+        }
+      }
+
+      // ===== 动态：发表回复 =====
+      function addReply(btn) {
+        var wrap = btn.closest(".reply-input");
+        if (!wrap) return;
+        var input = wrap.querySelector("input");
+        if (!input) return;
+        var text = input.value.trim();
+        if (!text) return;
+
+        var item = btn.closest(".activity-item");
+        var box = item.querySelector(".activity-replies");
+
+        var el = document.createElement("div");
+        el.className = "reply-item";
+        el.innerHTML =
+          '<div class="avatar">我</div>' +
+          '<div class="reply-body">' +
+          '<div class="reply-name">我</div>' +
+          '<div class="reply-text"></div>' +
+          '<div class="reply-time">刚刚</div>' +
+          "</div>";
+        el.querySelector(".reply-text").textContent = text;
+
+        // 插到输入框前面（保持输入框在最下面）
+        box.insertBefore(el, wrap);
+
+        // 隐藏「还没有回复」
+        var empty = box.querySelector(".reply-empty");
+        if (empty) empty.style.display = "none";
+
+        // 回复数字 +1
+        var num = item.querySelector(
+          ".activity-reply-btn .activity-reply-count",
+        );
+        if (num) num.textContent = (parseInt(num.textContent, 10) || 0) + 1;
+
+        input.value = "";
+      }
+
+      // ===== 帖子条目：主站还没接链接，先给个提示 =====
+      function openPost() {
+        alert("这条帖子的链接还没接上（等修主站时统一处理）");
+      }
+
+      // ======================================================================
+      // ★ 配图点开看大图（灯箱）
+      // 用「事件委托」：监听挂在 document 上，不依赖图片和灯箱谁先出现
+      // ======================================================================
+      function closeLightbox() {
+        var box = document.getElementById("lightbox");
+        if (box) box.classList.remove("show");
+        document.body.classList.remove("lightbox-open");
+      }
+
+      function initLightbox() {
+        // 点配图 → 打开大图
+        document.addEventListener("click", function (e) {
+          var img = e.target;
+          if (!img || !img.classList || !img.classList.contains("activity-img"))
+            return;
+
+          var box = document.getElementById("lightbox");
+          var big = document.getElementById("lightboxImg");
+          if (!box || !big) return;
+
+          big.src = img.getAttribute("src") || "";
+          big.alt = img.getAttribute("alt") || "";
+          box.classList.add("show");
+          document.body.classList.add("lightbox-open");
+        });
+
+        // 点空白处 / 关闭按钮 → 关闭
+        document.addEventListener("click", function (e) {
+          if (e.target && e.target.id === "lightbox") closeLightbox();
+          if (e.target && e.target.id === "lightboxClose") closeLightbox();
+        });
+
+        // Esc 关闭
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" || e.keyCode === 27) closeLightbox();
+        });
+
+        // 配图加载失败时给个斜纹占位，不要一片空白
+        document.addEventListener(
+          "error",
+          function (e) {
+            var img = e.target;
+            if (
+              !img ||
+              !img.classList ||
+              !img.classList.contains("activity-img")
+            )
+              return;
+            img.style.background =
+              "repeating-linear-gradient(45deg, #f2f3f5, #f2f3f5 8px, #e8eaed 8px, #e8eaed 16px)";
+            img.alt = "图片没能加载：" + (img.getAttribute("src") || "");
+          },
+          true,
+        );
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initLightbox);
+      } else {
+        initLightbox();
+      }
+    
+  // ===== 音乐卡片：展开 / 收起歌词 =====
+  function toggleLyrics(btn) {
+    var item = btn.closest('.activity-item');
+    if (!item) return;
+    var box = item.querySelector('.lyric-box');
+    if (!box) return;
+    var hidden = box.classList.toggle('hidden');
+    btn.classList.toggle('open', !hidden);
+    var label = btn.querySelector('span:last-child') || btn;
+    btn.innerHTML = '<span class="fa fa-comment">▤</span> ' + (hidden ? '展开歌词' : '收起歌词');
+  }
+
+
+      /* ==================================================================
+         ★★★ 页面加密：密码在这里改 ★★★
+         ------------------------------------------------------------------
+         改密码：把下面 PAGE_PASSWORD 的值换掉即可。
+         注意：这是纯前端加密，懂技术的玩家可以在源码里看到密码。
+               做游戏够用了；如果要真正安全，需要服务器验证。
+         ================================================================== */
+      var PAGE_PASSWORD = "yuan851029";
+
+      // 解锁后在本标签页内记住（关掉标签页就需要重新输）
+      // 想每次刷新都要重输 → 把下面这一行改成 var REMEMBER = false;
+      var REMEMBER = true;
+      var STORAGE_KEY = "shiguang_profile_unlocked";
+
+      function applyUnlocked() {
+        document.body.classList.remove("locked");
+        var s = document.getElementById("lockScreen");
+        if (s) s.classList.add("hidden");
+      }
+
+      function tryUnlock() {
+        var input = document.getElementById("lockInput");
+        var hint = document.getElementById("lockHint");
+        var box = document.getElementById("lockBox");
+        if (!input || !hint) return;
+
+        var val = (input.value || "").trim();
+
+        if (val === PAGE_PASSWORD) {
+          hint.classList.remove("show");
+          applyUnlocked();
+          if (REMEMBER) {
+            try { sessionStorage.setItem(STORAGE_KEY, "1"); } catch (e) {}
+          }
+        } else {
+          hint.textContent = val ? "密码不对，再想想" : "请输入密码";
+          hint.classList.add("show");
+          if (box) {
+            box.classList.remove("shake");
+            void box.offsetWidth;   // 触发重排，让动画能重复播放
+            box.classList.add("shake");
+          }
+          input.value = "";
+          input.focus();
+        }
+      }
+
+      function initLock() {
+        // 已经解锁过就跳过
+        var unlocked = false;
+        if (REMEMBER) {
+          try { unlocked = sessionStorage.getItem(STORAGE_KEY) === "1"; } catch (e) {}
+        }
+
+        if (unlocked) {
+          applyUnlocked();
+          return;
+        }
+
+        document.body.classList.add("locked");
+
+        var input = document.getElementById("lockInput");
+        if (input) {
+          // 输入时按回车也能解锁
+          input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") { e.preventDefault(); tryUnlock(); }
+          });
+          input.focus();
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initLock);
+      } else {
+        initLock();
+      }
+</script>
+
+    <!-- ===== 点图放大用的灯箱（不用管，配图点击靠它）===== -->
+    <div class="lightbox" id="lightbox">
+      <button class="close" id="lightboxClose" aria-label="关闭">×</button>
+      <img id="lightboxImg" src="" alt="" />
+      <div class="hint">点击空白处 / 按 Esc 关闭</div>
+    </div>
+    <!-- ===== 页面加密：锁屏（密码对了才会消失）===== -->
+    <!-- 万一浏览器禁用了 JS：直接显示内容，不要让页面永远糊着 -->
+    <noscript>
+      <style>
+        body.locked .navbar,
+        body.locked .page {
+          filter: none !important;
+          pointer-events: auto !important;
+        }
+        .lock-screen { display: none !important; }
+      </style>
+    </noscript>
+
+    <!-- ===== 关注列表弹窗的样式（必须放在 noscript 区块外面，否则 JS 启用时整段不生效）===== -->
+    <style>
+          /* ======================================================================
+       ★ 关注列表弹窗（点侧边栏的「关注」打开）
+       ----------------------------------------------------------------------
+       条目两种：
+         <a class="follow-item" href 填 profile_0X.html> … </a>   能跳到主页
+         <div class="follow-item"> … </div>                      占位，点不动
+       ====================================================================== */
+    .profile-stat.clickable {
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .profile-stat.clickable:hover {
+      background: var(--bg-page);
+    }
+
+    .profile-stat.clickable:hover .num {
+      color: var(--brand);
+    }
+
+    .follow-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 4000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.5);
+      /* 注意：故意不加 transition（过渡会在某些环境里卡住，导致弹窗半透明） */
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .follow-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .follow-panel {
+      width: 100%;
+      max-width: 380px;
+      max-height: 76vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+
+    .follow-head {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .follow-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .follow-count {
+      font-size: 0.82rem;
+      color: var(--text-tertiary);
+    }
+
+    .follow-close {
+      margin-left: auto;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.15s;
+    }
+
+    .follow-close:hover {
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    .follow-list {
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .follow-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.12s;
+    }
+
+    a.follow-item {
+      cursor: pointer;
+    }
+
+    a.follow-item:hover {
+      background: var(--bg-page);
+    }
+
+    .follow-item .avatar {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--brand-light);
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .follow-item .avatar .avatar-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .follow-item .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .follow-item .name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .follow-item .desc {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .follow-item .go {
+      flex: 0 0 auto;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 3px 10px;
+    }
+
+    a.follow-item:hover .go {
+      color: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .follow-empty {
+      padding: 44px 20px;
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--text-tertiary);
+    }
+
+    @media (max-width: 480px) {
+      .follow-overlay { padding: 16px; }
+      .follow-panel { max-height: 82vh; }
+    }
+
+</style>
+
+    <div class="lock-screen" id="lockScreen">
+      <div class="lock-box" id="lockBox">
+        <div class="lock-icon"></div>
+        <div class="lock-title">用户主页已上锁</div>
+        <div class="lock-desc">网络猫知道</div>
+        <div class="lock-input-row">
+          <input
+            type="password"
+            id="lockInput"
+            placeholder="密码"
+            autocomplete="off"
+            maxlength="24"
+          />
+          <button type="button" onclick="tryUnlock()">解 锁</button>
+        </div>
+        <div class="lock-hint" id="lockHint"></div>
+      </div>
+    </div>
+
+
+    <!-- ===== 关注列表弹窗（点侧边栏的「关注」打开）=====
+         里面一条关注 = 一个 follow-item：
+           能跳主页的：<a class="follow-item" href 填 profile_0X.html> … </a>
+           只是占位的：<div class="follow-item"> … </div> -->
+    <div class="follow-overlay" id="followOverlay">
+      <div class="follow-panel">
+        <div class="follow-head">
+          <span class="follow-title">关注</span>
+          <span class="follow-count">0</span>
+          <button class="follow-close" type="button" onclick="hideFollowList()" aria-label="关闭">×</button>
+        </div>
+        <div class="follow-list">
+        <div class="follow-empty">还没有关注任何人</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== 关注列表开关 =====
+      function showFollowList() {
+        var o = document.getElementById('followOverlay');
+        if (!o) return;
+        o.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+      function hideFollowList() {
+        var o = document.getElementById('followOverlay');
+        if (!o) return;
+        o.classList.remove('show');
+        document.body.style.overflow = '';
+      }
+      document.getElementById('followOverlay').addEventListener('click', function (e) {
+        if (e.target === this) hideFollowList();   // 点遮罩关闭
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') hideFollowList();
+      });
+    </script>
+
+  
+    <!-- ===== 导航栏搜索（回车 → 主站搜索结果）===== -->
+    <script>
+      (function () {
+        var input = document.querySelector(".nav-search input");
+        if (input) {
+          input.addEventListener("keydown", function (e) {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            var q = (this.value || "").trim();
+            if (!q) return;
+            location.href = "index.html#q=" + encodeURIComponent(q);
+          });
+        }
+        // 从搜索结果点进来看这个人 → 回主站时回到搜索结果
+        try {
+          var m = (location.hash || "").match(/[#&]q=([^&]*)/);
+          if (m) {
+            var back = "index.html#q=" + m[1];
+            var as = document.querySelectorAll('a[href="index.html"]');
+            for (var i = 0; i < as.length; i++) as[i].setAttribute("href", back);
+          }
+        } catch (e) {}
+      })();
+    </script>
+</body>
+</html>
