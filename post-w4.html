@@ -3011,6 +3011,51 @@
       .related-list li.no-link { cursor: default; }
       .related-list li.no-link:hover { color: var(--text-secondary); }
 
+
+      /* ===== 页码角标（右下角浮动，提示还有几页没看）===== */
+      .page-badge {
+        position: fixed;
+        right: 14px;
+        bottom: 18px;
+        z-index: 900;
+        display: none;            /* 注意：不用 transition，避免卡住 */
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 6px 18px rgba(15, 20, 30, 0.22);
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .page-badge.show {
+        display: inline-flex;
+      }
+
+      .page-badge .badge-more {
+        font-weight: 400;
+        opacity: 0.85;
+        font-size: 0.72rem;
+      }
+
+      .page-badge:active {
+        transform: scale(0.96);
+      }
+
+      @media (max-width: 480px) {
+        .page-badge {
+          right: 10px;
+          bottom: 12px;
+          padding: 7px 12px;
+        }
+      }
 </style>
   </head>
 
@@ -3312,6 +3357,9 @@
         });
       })();
       var POST_ID = "post-w4";
+      // ★ 这篇在剧情里的顺序（改这两个数字就能调）
+      var POST_ORDER = 7;
+      var POST_TOTAL = 17;
       // ---- 所有「回主站」的地方统一处理 ----
       // 说明：微信 / 某些 App 的 WebView 不允许 window.open，
       //      所以要判断环境：普通浏览器开新标签，WebView 直接当前页跳转。
@@ -3340,12 +3388,47 @@
       var PER_PAGE = pageSize(); // 想固定成某个数：把 pageSize() 换成 6
 
       // ---- 翻页：直接数页面上的 .floor，删/加楼层会自动重算 ----
+
+      // ---- 页码角标：创建元素（放在 showFloorPage 之前，保证首次调用就能用）----
+      (function createPageBadge() {
+        if (document.getElementById("pageBadge")) return;
+        var b = document.createElement("div");
+        b.id = "pageBadge";
+        b.className = "page-badge";
+        b.title = "点击跳到底部分页";
+        b.addEventListener("click", function () {
+          var pager = document.getElementById("postPager");
+          var target = pager && pager.children.length ? pager : document.querySelector(".comment-section");
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+        document.body.appendChild(b);
+      })();
+
       function showFloorPage(n) {
         var floors = Array.prototype.slice.call(
           document.querySelectorAll("#page-post .comment-section .floor"),
         );
         var total = Math.max(1, Math.ceil(floors.length / PER_PAGE));
         n = Math.max(1, Math.min(n, total));
+
+        // ---- 更新角标：这是第几篇 / 共几篇 ----
+        var badge = document.getElementById("pageBadge");
+        if (badge) {
+          badge.classList.add("show");
+          badge.textContent = "";
+          badge.appendChild(
+            document.createTextNode(POST_ORDER + "/" + POST_TOTAL),
+          );
+          badge.title =
+            "第 " + POST_ORDER + " 篇 / 共 " + POST_TOTAL + " 篇";
+          // 这篇楼层多、有分页时，顺手提示当前在第几页
+          if (total > 1) {
+            var more = document.createElement("span");
+            more.className = "badge-more";
+            more.textContent = "· 第 " + n + "/" + total + " 页";
+            badge.appendChild(more);
+          }
+        }
 
         floors.forEach(function (el, i) {
           var onThisPage = i >= (n - 1) * PER_PAGE && i < n * PER_PAGE;

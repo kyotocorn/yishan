@@ -2039,6 +2039,35 @@
         object-fit: contain;
       }
 
+
+      /* ===== 页码角标（首页：固定显示这是第几站）===== */
+      .page-badge {
+        position: fixed;
+        right: 14px;
+        bottom: 18px;
+        z-index: 900;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--brand);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 6px 18px rgba(15, 20, 30, 0.22);
+        user-select: none;
+      }
+
+      @media (max-width: 480px) {
+        .page-badge {
+          right: 10px;
+          bottom: 12px;
+          padding: 7px 12px;
+        }
+      }
 </style>
 </head>
 <body>
@@ -2913,5 +2942,19 @@
   });
 </script>
 
+
+    <script>
+      // 首页在剧情里的顺序（改这两个数字就能调）
+      (function () {
+        var POST_ORDER = 3;
+        var POST_TOTAL = 17;
+        var b = document.createElement("div");
+        b.id = "pageBadge";
+        b.className = "page-badge";
+        b.textContent = POST_ORDER + "/" + POST_TOTAL;
+        b.title = "第 " + POST_ORDER + " 站 / 共 " + POST_TOTAL + " 站";
+        document.body.appendChild(b);
+      })();
+    </script>
 </body>
 </html>
